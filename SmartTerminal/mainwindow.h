@@ -8,6 +8,7 @@
 #include <QTreeWidgetItem>
 #include <HybridTreeWidgetItem.h>
 #include <graphicsScrollingText.h>
+#include <QPropertyAnimation>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -40,6 +41,13 @@ private slots:
     void handleBitcoin(const QJsonObject &list);
     void handleEthereum(const QJsonObject &list);
 
+    //Темы
+    void applyDarkTheme();
+    void applyLightTheme();
+
+    void toggleTheme();
+    void toggleThemeWithAnimation();
+
 private:
     Ui::MainWindow *ui;
     moexAPIconnection *m_api;  // Указатель на наш API класс
@@ -54,6 +62,8 @@ private:
     QCPFinancial *m_candlesticks;
 
     GraphicsScrollingText* scrollingText;
+
+    bool isDarkTheme;
 
     void setupCandlestickChart();
 };

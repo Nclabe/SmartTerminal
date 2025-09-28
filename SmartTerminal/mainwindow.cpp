@@ -43,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->intervalCombo->addItem("1 час", 60);
     ui->intervalCombo->addItem("1 день", 24);
     connect(ui->intervalCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onIntervalChanged);
+    connect(ui->themeToggleButton, &QPushButton::clicked, this, &MainWindow::toggleTheme);
     //ui->intervalCombo->setCurrentIndex(0);
     //onIntervalChanged(0);
 
@@ -53,6 +54,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->verticalLayout_ScrollingText->addWidget(scrollingText);
 
     setupCandlestickChart();
+    applyDarkTheme(); // Начинаем с темной темы
+    isDarkTheme = true;
  }
 
 MainWindow::~MainWindow()
@@ -353,6 +356,492 @@ void MainWindow::handleEthereum(const QJsonObject &crypto)
                                   .arg(price, 0, 'f', 2)
                                   .arg(change >= 0 ? "+" : "").arg(change, 0, 'f', 2);
     scrollingText->setETH(fullStr);
+}
+
+void MainWindow::toggleTheme()
+{
+    if (isDarkTheme) {
+        applyLightTheme();
+        ui->themeToggleButton->setText("Переключить на темную тему");
+    } else {
+        applyDarkTheme();
+        ui->themeToggleButton->setText("Переключить на светлую тему");
+    }
+    isDarkTheme = !isDarkTheme;
+    ui->chartWidget->replot();
+}
+
+void MainWindow::toggleThemeWithAnimation()
+{
+    QPropertyAnimation *animation = new QPropertyAnimation(ui->chartWidget, "geometry");
+    animation->setDuration(300);
+    animation->setStartValue(ui->chartWidget->geometry());
+    animation->setEndValue(ui->chartWidget->geometry());
+
+    connect(animation, &QPropertyAnimation::finished, [this]() {
+        toggleTheme();
+    });
+
+    animation->start();
+}
+
+void MainWindow::applyDarkTheme()
+{
+    // Фон графика
+    ui->chartWidget->setBackground(QBrush(QColor(30, 30, 40)));
+    ui->chartWidget->axisRect()->setBackground(QBrush(QColor(40, 40, 50)));
+
+    // Настройка осей
+    QColor axisColor(200, 200, 200);
+    QColor gridColor(80, 80, 80);
+    QColor subGridColor(60, 60, 60);
+    QColor textColor(200, 200, 200);
+
+    ui->chartWidget->xAxis->setBasePen(QPen(axisColor, 1));
+    ui->chartWidget->yAxis->setBasePen(QPen(axisColor, 1));
+
+    ui->chartWidget->xAxis->setTickPen(QPen(axisColor, 1));
+    ui->chartWidget->yAxis->setTickPen(QPen(axisColor, 1));
+
+    ui->chartWidget->xAxis->setSubTickPen(QPen(axisColor, 1));
+    ui->chartWidget->yAxis->setSubTickPen(QPen(axisColor, 1));
+
+    ui->chartWidget->xAxis->setTickLabelColor(textColor);
+    ui->chartWidget->yAxis->setTickLabelColor(textColor);
+
+    ui->chartWidget->xAxis->setLabelColor(textColor);
+    ui->chartWidget->yAxis->setLabelColor(textColor);
+
+    // Сетка
+    ui->chartWidget->xAxis->grid()->setPen(QPen(gridColor, 1, Qt::DotLine));
+    ui->chartWidget->yAxis->grid()->setPen(QPen(gridColor, 1, Qt::DotLine));
+    ui->chartWidget->xAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
+    ui->chartWidget->yAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
+
+    // Настройка свечей для темной темы
+    QCPFinancial *candlesticks = qobject_cast<QCPFinancial*>(ui->chartWidget->plottable(0));
+    if (candlesticks) {
+        candlesticks->setBrushPositive(QBrush(QColor(0, 180, 0)));    // Зеленый
+        candlesticks->setPenPositive(QPen(QColor(0, 150, 0)));        // Темно-зеленый
+        candlesticks->setBrushNegative(QBrush(QColor(180, 0, 0)));    // Красный
+        candlesticks->setPenNegative(QPen(QColor(150, 0, 0)));        // Темно-красный
+    }
+
+    // Легенда
+    ui->chartWidget->legend->setBrush(QBrush(QColor(50, 50, 60, 200)));
+    ui->chartWidget->legend->setBorderPen(QPen(QColor(80, 80, 80)));
+    ui->chartWidget->legend->setTextColor(textColor);
+
+    // Основные цвета для темной темы
+    QColor backgroundColor(45, 45, 55);
+    QColor widgetBackgroundColor(60, 60, 70);
+    QColor borderColor(80, 80, 90);
+    QColor highlightColor(70, 130, 200);
+    QColor buttonColor(70, 70, 80);
+    QColor inputBackgroundColor(50, 50, 60);
+    QColor treeBackgroundColor(40, 40, 50);
+    QColor headerBackgroundColor(60, 60, 70);
+    QColor alternateColor(55, 55, 65);
+
+    // Стиль для всего приложения
+    QString appStyle = QString(
+                           "QWidget {"
+                           "    background-color: %1;"
+                           "    color: %2;"
+                           "    font-family: 'Segoe UI', Arial, sans-serif;"
+                           "}"
+                           "QLabel {"
+                           "    background-color: transparent;"
+                           "    color: %2;"
+                           "    padding: 5px;"
+                           "    font-size: 12px;"
+                           "}"
+                           "QComboBox {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 5px 10px;"
+                           "    min-width: 100px;"
+                           "    font-size: 12px;"
+                           "}"
+                           "QComboBox::drop-down {"
+                           "    border: none;"
+                           "    width: 20px;"
+                           "}"
+                           "QComboBox::down-arrow {"
+                           "    image: none;"
+                           "    border-left: 5px solid transparent;"
+                           "    border-right: 5px solid transparent;"
+                           "    border-top: 5px solid %2;"
+                           "    width: 0px;"
+                           "    height: 0px;"
+                           "}"
+                           "QComboBox QAbstractItemView {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    selection-background-color: %4;"
+                           "    outline: none;"
+                           "}"
+                           "QPushButton {"
+                           "    background-color: %5;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 8px 15px;"
+                           "    font-size: 12px;"
+                           "    font-weight: bold;"
+                           "}"
+                           "QPushButton:hover {"
+                           "    background-color: %7;"
+                           "}"
+                           "QPushButton:pressed {"
+                           "    background-color: %4;"
+                           "}"
+                           "QDateEdit {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 5px;"
+                           "    font-size: 12px;"
+                           "}"
+                           "QDateEdit::drop-down {"
+                           "    border: none;"
+                           "    width: 20px;"
+                           "}"
+                           "QDateEdit::down-arrow {"
+                           "    image: none;"
+                           "    border-left: 5px solid transparent;"
+                           "    border-right: 5px solid transparent;"
+                           "    border-top: 5px solid %2;"
+                           "    width: 0px;"
+                           "    height: 0px;"
+                           "}"
+                           "QCalendarWidget QWidget {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "}"
+                           "QCalendarWidget QToolButton {"
+                           "    background-color: %5;"
+                           "    color: %2;"
+                           "}"
+                           "QLineEdit {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 8px;"
+                           "    font-size: 12px;"
+                           "    selection-background-color: %4;"
+                           "}"
+                           "QLineEdit:focus {"
+                           "    border: 1px solid %4;"
+                           "}"
+                           "QTreeWidget {"
+                           "    background-color: %8;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 5px;"
+                           "    outline: 0;"
+                           "}"
+                           "QTreeWidget::item {"
+                           "    border-bottom: 1px solid %3;"
+                           "    padding: 5px;"
+                           "}"
+                           "QTreeWidget::item:alternate {"
+                           "    background-color: %9;"
+                           "}"
+                           "QTreeWidget::item:selected {"
+                           "    background-color: %4;"
+                           "    color: white;"
+                           "}"
+                           "QTreeWidget::item:hover {"
+                           "    background-color: %10;"
+                           "}"
+                           "QHeaderView::section {"
+                           "    background-color: %11;"
+                           "    color: %2;"
+                           "    padding: 5px;"
+                           "    border: 1px solid %3;"
+                           "    font-weight: bold;"
+                           "}"
+                           "QSplitter::handle {"
+                           "    background-color: %3;"
+                           "}"
+                           "QSplitter::handle:hover {"
+                           "    background-color: %4;"
+                           "}"
+                           "QScrollBar:vertical {"
+                           "    background-color: %1;"
+                           "    width: 12px;"
+                           "    margin: 0px;"
+                           "}"
+                           "QScrollBar::handle:vertical {"
+                           "    background-color: %5;"
+                           "    border-radius: 6px;"
+                           "    min-height: 20px;"
+                           "}"
+                           "QScrollBar::handle:vertical:hover {"
+                           "    background-color: %4;"
+                           "}"
+                           "QScrollBar:horizontal {"
+                           "    background-color: %1;"
+                           "    height: 12px;"
+                           "    margin: 0px;"
+                           "}"
+                           "QScrollBar::handle:horizontal {"
+                           "    background-color: %5;"
+                           "    border-radius: 6px;"
+                           "    min-width: 20px;"
+                           "}"
+                           "QScrollBar::handle:horizontal:hover {"
+                           "    background-color: %4;"
+                           "}"
+                           ).arg(backgroundColor.name())
+                           .arg(textColor.name())
+                           .arg(borderColor.name())
+                           .arg(highlightColor.name())
+                           .arg(buttonColor.name())
+                           .arg(inputBackgroundColor.name())
+                           .arg(buttonColor.lighter(120).name())
+                           .arg(treeBackgroundColor.name())
+                           .arg(alternateColor.name())
+                           .arg(highlightColor.lighter(120).name())
+                           .arg(headerBackgroundColor.name());
+
+    qApp->setStyleSheet(appStyle);
+}
+
+void MainWindow::applyLightTheme()
+{
+    // Фон графика
+    ui->chartWidget->setBackground(QBrush(QColor(255, 255, 255)));
+    ui->chartWidget->axisRect()->setBackground(QBrush(QColor(245, 245, 245)));
+
+    // Настройка осей
+    QColor axisColor(50, 50, 50);
+    QColor gridColor(220, 220, 220);
+    QColor subGridColor(240, 240, 240);
+    QColor textColor(0, 0, 0);
+
+    ui->chartWidget->xAxis->setBasePen(QPen(axisColor, 1));
+    ui->chartWidget->yAxis->setBasePen(QPen(axisColor, 1));
+
+    ui->chartWidget->xAxis->setTickPen(QPen(axisColor, 1));
+    ui->chartWidget->yAxis->setTickPen(QPen(axisColor, 1));
+
+    ui->chartWidget->xAxis->setSubTickPen(QPen(axisColor, 1));
+    ui->chartWidget->yAxis->setSubTickPen(QPen(axisColor, 1));
+
+    ui->chartWidget->xAxis->setTickLabelColor(textColor);
+    ui->chartWidget->yAxis->setTickLabelColor(textColor);
+
+    ui->chartWidget->xAxis->setLabelColor(textColor);
+    ui->chartWidget->yAxis->setLabelColor(textColor);
+
+    // Сетка
+    ui->chartWidget->xAxis->grid()->setPen(QPen(gridColor, 1, Qt::SolidLine));
+    ui->chartWidget->yAxis->grid()->setPen(QPen(gridColor, 1, Qt::SolidLine));
+    ui->chartWidget->xAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
+    ui->chartWidget->yAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
+
+    // Настройка свечей для светлой темы
+    QCPFinancial *candlesticks = qobject_cast<QCPFinancial*>(ui->chartWidget->plottable(0));
+    if (candlesticks) {
+        candlesticks->setBrushPositive(QBrush(QColor(50, 200, 50)));    // Светло-зеленый
+        candlesticks->setPenPositive(QPen(QColor(0, 150, 0)));          // Темно-зеленый
+        candlesticks->setBrushNegative(QBrush(QColor(255, 100, 100)));  // Светло-красный
+        candlesticks->setPenNegative(QPen(QColor(200, 0, 0)));          // Темно-красный
+    }
+
+    // Легенда
+    ui->chartWidget->legend->setBrush(QBrush(QColor(255, 255, 255, 200)));
+    ui->chartWidget->legend->setBorderPen(QPen(QColor(200, 200, 200)));
+    ui->chartWidget->legend->setTextColor(textColor);
+
+    // Основные цвета для светлой темы
+    QColor backgroundColor(240, 240, 240);
+    QColor widgetBackgroundColor(255, 255, 255);
+    QColor borderColor(200, 200, 200);
+    QColor highlightColor(70, 130, 200);
+    QColor buttonColor(240, 240, 240);
+    QColor inputBackgroundColor(255, 255, 255);
+    QColor treeBackgroundColor(255, 255, 255);
+    QColor headerBackgroundColor(240, 240, 240);
+    QColor alternateColor(245, 245, 245);
+
+    // Стиль для всего приложения
+    QString appStyle = QString(
+                           "QWidget {"
+                           "    background-color: %1;"
+                           "    color: %2;"
+                           "    font-family: 'Segoe UI', Arial, sans-serif;"
+                           "}"
+                           "QLabel {"
+                           "    background-color: transparent;"
+                           "    color: %2;"
+                           "    padding: 5px;"
+                           "    font-size: 12px;"
+                           "}"
+                           "QComboBox {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 5px 10px;"
+                           "    min-width: 100px;"
+                           "    font-size: 12px;"
+                           "}"
+                           "QComboBox::drop-down {"
+                           "    border: none;"
+                           "    width: 20px;"
+                           "}"
+                           "QComboBox::down-arrow {"
+                           "    image: none;"
+                           "    border-left: 5px solid transparent;"
+                           "    border-right: 5px solid transparent;"
+                           "    border-top: 5px solid %2;"
+                           "    width: 0px;"
+                           "    height: 0px;"
+                           "}"
+                           "QComboBox QAbstractItemView {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    selection-background-color: %4;"
+                           "    outline: none;"
+                           "}"
+                           "QPushButton {"
+                           "    background-color: %5;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 8px 15px;"
+                           "    font-size: 12px;"
+                           "    font-weight: bold;"
+                           "}"
+                           "QPushButton:hover {"
+                           "    background-color: %7;"
+                           "}"
+                           "QPushButton:pressed {"
+                           "    background-color: %4;"
+                           "    color: white;"
+                           "}"
+                           "QDateEdit {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 5px;"
+                           "    font-size: 12px;"
+                           "}"
+                           "QDateEdit::drop-down {"
+                           "    border: none;"
+                           "    width: 20px;"
+                           "}"
+                           "QDateEdit::down-arrow {"
+                           "    image: none;"
+                           "    border-left: 5px solid transparent;"
+                           "    border-right: 5px solid transparent;"
+                           "    border-top: 5px solid %2;"
+                           "    width: 0px;"
+                           "    height: 0px;"
+                           "}"
+                           "QCalendarWidget QWidget {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "}"
+                           "QCalendarWidget QToolButton {"
+                           "    background-color: %5;"
+                           "    color: %2;"
+                           "}"
+                           "QLineEdit {"
+                           "    background-color: %6;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 4px;"
+                           "    padding: 8px;"
+                           "    font-size: 12px;"
+                           "    selection-background-color: %4;"
+                           "}"
+                           "QLineEdit:focus {"
+                           "    border: 1px solid %4;"
+                           "}"
+                           "QTreeWidget {"
+                           "    background-color: %8;"
+                           "    color: %2;"
+                           "    border: 1px solid %3;"
+                           "    border-radius: 5px;"
+                           "    outline: 0;"
+                           "}"
+                           "QTreeWidget::item {"
+                           "    border-bottom: 1px solid %3;"
+                           "    padding: 5px;"
+                           "}"
+                           "QTreeWidget::item:alternate {"
+                           "    background-color: %9;"
+                           "}"
+                           "QTreeWidget::item:selected {"
+                           "    background-color: %4;"
+                           "    color: white;"
+                           "}"
+                           "QTreeWidget::item:hover {"
+                           "    background-color: %10;"
+                           "}"
+                           "QHeaderView::section {"
+                           "    background-color: %11;"
+                           "    color: %2;"
+                           "    padding: 5px;"
+                           "    border: 1px solid %3;"
+                           "    font-weight: bold;"
+                           "}"
+                           "QSplitter::handle {"
+                           "    background-color: %3;"
+                           "}"
+                           "QSplitter::handle:hover {"
+                           "    background-color: %4;"
+                           "}"
+                           "QScrollBar:vertical {"
+                           "    background-color: %1;"
+                           "    width: 12px;"
+                           "    margin: 0px;"
+                           "}"
+                           "QScrollBar::handle:vertical {"
+                           "    background-color: %5;"
+                           "    border-radius: 6px;"
+                           "    min-height: 20px;"
+                           "}"
+                           "QScrollBar::handle:vertical:hover {"
+                           "    background-color: %4;"
+                           "}"
+                           "QScrollBar:horizontal {"
+                           "    background-color: %1;"
+                           "    height: 12px;"
+                           "    margin: 0px;"
+                           "}"
+                           "QScrollBar::handle:horizontal {"
+                           "    background-color: %5;"
+                           "    border-radius: 6px;"
+                           "    min-width: 20px;"
+                           "}"
+                           "QScrollBar::handle:horizontal:hover {"
+                           "    background-color: %4;"
+                           "}"
+                           ).arg(backgroundColor.name())
+                           .arg(textColor.name())
+                           .arg(borderColor.name())
+                           .arg(highlightColor.name())
+                           .arg(buttonColor.name())
+                           .arg(inputBackgroundColor.name())
+                           .arg(buttonColor.darker(110).name())
+                           .arg(treeBackgroundColor.name())
+                           .arg(alternateColor.name())
+                           .arg(highlightColor.lighter(120).name())
+                           .arg(headerBackgroundColor.name());
+
+    qApp->setStyleSheet(appStyle);
 }
 
 

@@ -71,6 +71,13 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="themeToggleButton">
+          <property name="text">
+           <string>Переключить на светлую тему</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>
